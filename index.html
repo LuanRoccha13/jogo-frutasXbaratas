@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guerra de Bancada - 3D Split-Screen Tower Defense</title>
+
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- Canvas 3D para WebGL Split-Screen -->
+  <div id="game-container">
+    <canvas id="webgl-canvas"></canvas>
+  </div>
+
+  <!-- UI Overlay -->
+  <div id="ui-layer">
+    <!-- Red Screen Damage Flash Overlays -->
+    <div id="p1-damage-overlay" class="damage-flash-overlay p1-flash"></div>
+    <div id="p2-damage-overlay" class="damage-flash-overlay p2-flash"></div>
+
+    <!-- Linha Divisória Central -->
+    <div id="center-divider">
+      <div id="wave-progress-container">
+        <div id="wave-phase-badge">FASE 1: O APERITIVO</div>
+        <div id="wave-bar-outer">
+          <div id="wave-bar-fill"></div>
+        </div>
+        <div id="wave-timer">Onda em progresso</div>
+      </div>
+    </div>
+
+    <!-- HUD Jogador 1 (Esquerda - Azulejo Azul) -->
+    <div id="hud-p1" class="player-hud">
+      <div class="hud-top-card p1-accent">
+        <div class="player-info-column">
+          <div class="player-label">JOGADOR 1 (AZUL)</div>
+          <div class="pantry-hp-container">
+            <div class="pantry-hp-bar-outer">
+              <div id="p1-hp-bar" class="pantry-hp-bar-fill p1-hp-fill" style="width: 100%;"></div>
+            </div>
+            <span id="p1-hp-text" class="hp-val">100 HP</span>
+          </div>
+        </div>
+        <div class="resource-display">
+          <span class="resource-icon">🍅</span>
+          <span id="p1-ingredients-count" class="resource-val">100</span>
+        </div>
+      </div>
+
+      <div class="hud-bottom-group">
+        <div id="p1-deck" class="deck-container">
+          <!-- Preenchido dinamicamente via JS -->
+        </div>
+        
+        <div class="controls-legend p1-legend">
+          <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Mover Cursor</span>
+          <span><kbd>ESPAÇO</kbd> Plantar / Coletar</span>
+          <span><kbd>Q</kbd> / <kbd>E</kbd> Selecionar Carta</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD Jogador 2 (Direita - Azulejo Verde) -->
+    <div id="hud-p2" class="player-hud">
+      <div class="hud-top-card p2-accent">
+        <div class="player-info-column">
+          <div class="player-label">JOGADOR 2 (VERDE)</div>
+          <div class="pantry-hp-container">
+            <div class="pantry-hp-bar-outer">
+              <div id="p2-hp-bar" class="pantry-hp-bar-fill p2-hp-fill" style="width: 100%;"></div>
+            </div>
+            <span id="p2-hp-text" class="hp-val">100 HP</span>
+          </div>
+        </div>
+        <div class="resource-display">
+          <span class="resource-icon">🍅</span>
+          <span id="p2-ingredients-count" class="resource-val">100</span>
+        </div>
+      </div>
+
+      <div class="hud-bottom-group">
+        <div id="p2-deck" class="deck-container">
+          <!-- Preenchido dinamicamente via JS -->
+        </div>
+
+        <div class="controls-legend p2-legend">
+          <span><kbd>▲</kbd><kbd>◄</kbd><kbd>▼</kbd><kbd>►</kbd> Mover Cursor</span>
+          <span><kbd>ENTER</kbd> Plantar / Coletar</span>
+          <span><kbd>,</kbd> / <kbd>.</kbd> ou <kbd>Num 1/3</kbd> Selecionar Carta</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen Alert Banners (Phase Transition) -->
+  <div id="phase-banner" class="banner-hidden">
+    <h2 id="phase-banner-title">FASE 2: O PRATO PRINCIPAL</h2>
+    <p id="phase-banner-subtitle">Cuidado! Ratos e Moscas Mutantes surgiram na cozinha!</p>
+  </div>
+
+  <!-- Tela de Inicio / Menu -->
+  <div id="start-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h1 class="game-title">⚔️ GUERRA DE BANCADA 🍅</h1>
+      <p class="game-subtitle">Tower Defense 3D Culinário em Tela Dividida (1v1 Local)</p>
+
+      <div class="instructions-grid">
+        <div class="instruction-box p1-box">
+          <h3>🔵 JOGADOR 1 (Bancada Esquerda)</h3>
+          <ul>
+            <li><strong>Movimentação:</strong> Teclas <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></li>
+            <li><strong>Plantar / Coletar:</strong> Tecla <kbd>ESPAÇO</kbd></li>
+            <li><strong>Alternar Deck:</strong> Teclas <kbd>Q</kbd> / <kbd>E</kbd> ou <kbd>1</kbd>-<kbd>5</kbd></li>
+          </ul>
+        </div>
+
+        <div class="instruction-box p2-box">
+          <h3>🟢 JOGADOR 2 (Bancada Direita)</h3>
+          <ul>
+            <li><strong>Movimentação:</strong> Teclas <kbd>▲</kbd> <kbd>◄</kbd> <kbd>▼</kbd> <kbd>►</kbd></li>
+            <li><strong>Plantar / Coletar:</strong> Tecla <kbd>ENTER</kbd></li>
+            <li><strong>Alternar Deck:</strong> Teclas <kbd>,</kbd> / <kbd>.</kbd> ou Numpad <kbd>1</kbd>/<kbd>3</kbd></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="rules-summary">
+        <h4>📋 Regras de Combate Culinário</h4>
+        <p>1. Colete <strong>Ingredientes Frescos</strong> no seu grid 5x9 movendo a mira sobre eles.</p>
+        <p>2. Posicione defensores estratégicos antes que as pragas cheguem à sua despensa.</p>
+        <p>3. O jogo avança por 3 fases até a <strong>Morte Súbita</strong>. Aquele que deixar 1 praga invadir perde!</p>
+      </div>
+
+      <button id="start-btn" class="btn-primary">INICIAR GUERRA</button>
+    </div>
+  </div>
+
+  <!-- Tela de Game Over / Vitória -->
+  <div id="gameover-modal" class="modal-overlay modal-hidden">
+    <div class="modal-card gameover-card">
+      <div id="winner-badge" class="winner-badge">🏆 JOGADOR 1 VENCEU!</div>
+      <h2 id="gameover-title">SUA DESPENSA FOI INVADIDA!</h2>
+      <p id="gameover-desc">As pragas gourmet tomaram a bancada adversária!</p>
+      <button id="restart-btn" class="btn-primary">JOGAR NOVAMENTE</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
