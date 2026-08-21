@@ -12,6 +12,11 @@ class GameController {
     this.isPlaying = false;
     this.isGameOver = false;
 
+    // Render initial 3D background view behind the start modal
+    this.p1Session = new GameSession(this.renderer.p1Scene, true);
+    this.p2Session = new GameSession(this.renderer.p2Scene, false);
+    this.renderer.render();
+
     this.initUI();
   }
 
@@ -49,8 +54,12 @@ class GameController {
       startModal.classList.add('modal-hidden');
     }
 
-    audio.init();
-    audio.playPhaseAlert();
+    try {
+      audio.init();
+      audio.playPhaseAlert();
+    } catch (err) {
+      console.warn('Audio init warning:', err);
+    }
 
     // Create fresh Game Sessions for P1 (Blue) and P2 (Green)
     this.p1Session = new GameSession(this.renderer.p1Scene, true);
@@ -145,7 +154,15 @@ class GameController {
   }
 }
 
-// Start Application on DOM Load
-window.addEventListener('DOMContentLoaded', () => {
-  window.gameController = new GameController();
-});
+// Robust Application Initialization (handles deferred ES modules timing)
+function initApp() {
+  if (!window.gameController) {
+    window.gameController = new GameController();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
